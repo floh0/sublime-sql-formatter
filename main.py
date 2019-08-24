@@ -19,7 +19,6 @@ reserved = {
     'sort': 'SORT',
     'having': 'HAVING',
     'limit': 'LIMIT',
-    'join': 'JOIN',
     'as': 'AS',
     'case': 'CASE',
     'when': 'WHEN',
@@ -40,7 +39,19 @@ reserved = {
     'union': 'UNION',
     'distinct': 'DISTINCT',
     'except': 'EXCEPT',
-    'between': 'BETWEEN'
+    'between': 'BETWEEN',
+    'asc': 'ASC',
+    'desc': 'DESC',
+    'join': 'JOIN',
+    'on': 'ON',
+    'inner': 'INNER',
+    'outer': 'OUTER',
+    'left': 'LEFT',
+    'right': 'RIGHT',
+    'full': 'FULL',
+    'semi': 'SEMI',
+    'cross': 'CROSS',
+    'natural': 'NATURAL'
 }
 
 tokens = [
@@ -81,12 +92,13 @@ def t_LABEL(t):
      return t
 
 def t_COMMENT_ALONE(t):
-    r'(^|(?<=\n))[ \t]*--[^\n]*'
+    r'(^|(?<=\n))\s*--[^\n]*'
     return t
 
 def t_COMMENT(t):
     r'--[^\n]*'
     return t
+
 
 t_ignore = " \t\n"
 
@@ -99,17 +111,26 @@ lex.lex()
 numeric_regex = re.compile(r'^[\s\d\n\t\.\+\-\*\/\^\%\&\|\(\)\=\<\>\!\~\,\$]*$')
 is_numeric_expression = lambda x: numeric_regex.match(x)
 
-def p_query_with_semicolon(p):
-    'query : query SEMICOLON'
-    p[0] = f"{p[1]}{p[2]}"
 
-def p_query_select(p):
-    'query : select_block'
+def p_query(p):
+    'query : expr_definition'
     p[0] = p[1]
 
-def p_query_more(p):
-    'query : select_block additional_block_list'
+def p_query_with_semicolon(p):
+    'query : expr_definition SEMICOLON'
+    p[0] = f"{p[1]}{p[2]}"
+
+# ============================================================
+
+def p_subquerry_select(p):
+    'subquerry : select_block'
+    p[0] = p[1]
+
+def p_subquerry_more(p):
+    'subquerry : select_block additional_block_list'
     p[0] = f"{p[1]}\n{p[2]}"
+
+# ============================================================
 
 def p_additional_block_list_next(p):
     'additional_block_list : additional_block additional_block_list'
@@ -121,38 +142,81 @@ def p_additional_block_list_end(p):
 
 def p_additional_block(p):
     '''
-    additional_block : where_block
-                     | from_block
+    additional_block : keyword_block
+                     | by_block
+                     | join_block
     '''
     p[0] = p[1]
+
+# ============================================================
 
 def p_select_block(p):
     'select_block : select_keyword select_clause'
     p[2] = p[2].replace('\n','\n\t')
     p[0] = f"{p[1]}\n\t{p[2]}"
 
-def p_where_block(p):
-    'where_block : WHERE where_condition'
+def p_keyword_block(p):
+    '''
+    keyword_block : FROM clause
+                  | WHERE clause
+                  | LIMIT clause
+                  | HAVING clause
+    '''
     p[0] = f"{p[1].upper()} {p[2]}"
 
-def p_from_block(p):
-    'from_block : FROM from_clause'
-    p[0] = f"{p[1].upper()} {p[2]}"
+def p_by_block(p):
+    '''
+    by_block : GROUP BY clause
+             | ORDER BY clause
+             | CLUSTER BY clause
+             | DISTRIBUTE BY clause
+             | SORT BY clause
+    '''
+    p[0] = f"{p[1].upper()} {p[2].upper()} {p[3]}" 
 
 # ============================================================
 
-def p_from_clause(p):
-    'from_clause : expr'
+def p_clause(p):
+    'clause : expr_list'
     if (p[1][0] != '(' or p[1][-1] != ')') and '\n' in p[1]:
         p[1] = p[1].replace('\n','\n\t')
     p[0] = p[1]
 
 # ============================================================
 
-def p_where_condition(p):
-    'where_condition : expr'
-    if (p[1][0] != '(' or p[1][-1] != ')') and '\n' in p[1]:
-        p[1] = p[1].replace('\n','\n\t')
+def p_join_block_on(p):
+    'join_block : join_expression clause ON expr_list'
+    p[4] = p[4].replace('\n','\n\t')
+    p[0] = f"{p[1]} {p[2]}\n\t{p[3].upper()} {p[4]}"
+
+def p_join_block_alone(p):
+    'join_block : join_expression clause'
+    p[0] = f"{p[1]} {p[2]}"
+
+def p_join_expression(p):
+    'join_expression : join_prefix_list JOIN'
+    p[0] = f"{p[1]} {p[2].upper()}"
+
+def p_join_prefix(p):
+    '''
+    join_prefix : INNER
+                | OUTER
+                | LEFT
+                | RIGHT
+                | FULL
+                | SEMI
+                | CROSS
+                | NATURAL
+    '''
+    p[0] = p[1].upper()
+
+
+def p_join_prefix_list_next(p):
+    'join_prefix_list : join_prefix join_prefix_list'
+    p[0] = f"{p[1]} {p[2]}"
+
+def p_join_prefix_list_end(p):
+    'join_prefix_list : join_prefix'
     p[0] = p[1]
 
 # ============================================================
@@ -268,13 +332,15 @@ def p_expr_definition_keyword(p):
                     | COALESCE
                     | CAST
                     | CONCAT
+                    | ASC
+                    | DESC
     '''
     p[0] = p[1].upper()
 
 def p_expr_definition_block(p):
     '''
     expr_definition : case_when
-                    | query
+                    | subquerry
     '''
     p[0] = p[1]
 
@@ -308,8 +374,7 @@ def p_error(p):
 yacc.yacc()
 
 query = """
-select distinct
- --a between 1 and 2,
+(select distinct
   case when x != 0 then 1 else case when x > 0 then 2 else 3 end end as toto_le_zigoto
 , 
 (f.f1 + '-' + f.f2)
@@ -318,13 +383,12 @@ select distinct
 , F.je_suis_un_champ_avec_un_${uuid}, coalesce(null,null,f.champ1, f.champ2), ma_function(hex(f.est_true, b.est_true))[ 0 ]
 where (m = true or m = false) and m is null and ((1 != 0) or (m.is_false or case when 1=1 or 2=2 or case when 7=7 then ahah end then true else false end)) and o and i and j or a
 where (m = true or m = false) and m is null and ((1 != 0) or (m.is_false or case when 1=1 or 2=2 or case when 7=7 then ahah end then true else false end)) and o and i and j or a
-from (select aa from (select * from (select * from non where (1 is 1)))) where (1=1) AND 2=2
+from (select aa from (select * from (select * from non where (1 is 1)))) where 1=1 AND 2=2
+order by 1 asc and 2 desc limit 15
+inner natural left join (select * from oui where non == non) on (2=2 and 1+1=1+1) and 1=1
+inner natural left join ma_table)
 """
 
-query = """--oui
-select * from a --non
---peut-être
-"""
 
 lex.input(query)
 for tok in iter(lex.token, None):
