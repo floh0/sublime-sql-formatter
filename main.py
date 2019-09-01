@@ -6,7 +6,7 @@ query = """
 (select distinct
   case when x != 0 then 1 else case when x > 0 then 2 else 3 end end as toto_le_zigoto
 , 
-(f.f1 + '-' + f.f2)
+([  f  ] . f1 + '-' + f.f2)
 , f.id in (1 ,2 ,42),
 '(' + 'oui' + '`@)' + @ + 1 + (1 * 1) "select" carapuce --test
 , F.je_suis_un_champ_avec_un_${uuid}, coalesce(null,null,f.champ1, f.champ2), ma_function(hex(f.est_true, b.est_true))[ 0 ]
@@ -16,7 +16,7 @@ from (select aa from (select * from (select * from non where (1 is 1)))) where 1
 --slt les copains
 order by 1 asc and 2 desc limit 15
 inner natural left join ( --non
-select * from oui where non == non) on (2=2 and 1+1=1+1) and 1=1
+select * from oui.data.visits where non == non) on (2=2 and 1+1=1+1) and 1=1
 inner natural left join ma_table)
 except( -- moui
 select * from oui)

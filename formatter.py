@@ -67,6 +67,7 @@ tokens = [
     'STAR',
     'SYMBOL',
     'SEMICOLON',
+    'POINT',
     'LABEL',
     'LEFT_PAR',
     'RIGHT_PAR',
@@ -83,6 +84,7 @@ t_NOT = r'[!~]'
 t_STAR = r'\*'
 t_SYMBOL = r'[\%\&\+\-\/\^\|]'
 t_SEMICOLON = r';'
+t_POINT = r'\.'
 t_LEFT_PAR = r'\('
 t_RIGHT_PAR = r'\)'
 t_LEFT_BRA = r'\['
@@ -92,7 +94,7 @@ t_STRING_DOUBLE = r'\".*?\"'
 t_STRING_GRAVE = r'\`.*?\`'
 
 def t_LABEL(t):
-     r'[a-zA-Z0-9$\{\}\_\.\:\@]+'
+     r'[a-zA-Z0-9$\{\}\_\:\@]+'
      t.type = reserved.get(t.value.lower(),'LABEL')        # Check for reserved words
      return t
 
@@ -306,6 +308,10 @@ def p_join_expression(p):
     'join_expression : join_prefix_list join'
     p[0] = f"{p[1]} {p[2]}"
 
+def p_join_expression_alone(p):
+    'join_expression : join'
+    p[0] = p[1]
+
 def p_join_prefix(p):
     '''
     join_prefix : inner
@@ -374,6 +380,10 @@ def p_expr_definition_list_next(p):
         p[0] = f"{p[1]}{p[2]}"
     else:
         p[0] = f"{p[1]} {p[2]}"
+
+def p_expr_definition_list_point(p):
+    'expr_definition_list : expr_definition point expr_definition_list'
+    p[0] = f"{p[1]}{p[2]}{p[3]}"
 
 def p_expr_definition_list_end(p):
     'expr_definition_list : expr_definition'
@@ -532,6 +542,7 @@ def p_token_unchanged(p):
     star : STAR
     symbol : SYMBOL
     semicolon : SEMICOLON
+    point : POINT
     label : LABEL
     left_par : LEFT_PAR
     right_par : RIGHT_PAR
@@ -595,6 +606,7 @@ def p_token_commented(p):
     star : star comment
     symbol : symbol comment
     semicolon : semicolon comment
+    point : point comment
     label : label comment
     left_par : left_par comment
     right_par : right_par comment
