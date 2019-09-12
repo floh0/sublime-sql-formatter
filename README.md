@@ -1,4 +1,4 @@
-## Sublime-SQLFormatter
+## Sublime-SQL-Formatter
 
 SQL Query Formatter for Sublime Text 3
 
