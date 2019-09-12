@@ -1,8 +1,8 @@
 # Based on Hive SQL Syntax 👍
 # https://cwiki.apache.org/confluence/display/Hive/LanguageManual
 
-from ply import yacc
-from ply import lex
+from .ply import yacc
+from .ply import lex
 import re
 
 #  _           _                      
@@ -110,8 +110,7 @@ def t_COMMENT(t):
 t_ignore = ' \t\n'
 
 def t_error(t):
-    print(f"Illegal value '{t.value}'")
-    t.lexer.skip(1)
+    raise ValueError("Illegal value '%s'" % t.value)
 
 #  _ __   ___   __ _   ___ __  __
 # | '__| / _ \ / _` | / _ \\ \/ /
@@ -161,11 +160,11 @@ def p_query(p):
 
 def p_query_with_semicolon(p):
     'query : query semicolon'
-    p[0] = f"{p[1]}{p[2]}"
+    p[0] = "%s%s" % (p[1], p[2])
 
 def p_query_with_comment(p):
     'query : comment query'
-    p[0] = f"{p[1]}{p[2]}"
+    p[0] = "%s%s" % (p[1], p[2])
 
 #              _                                            
 #  ___  _   _ | |__    __ _  _   _   ___  _ __  _ __  _   _ 
@@ -180,7 +179,7 @@ def p_subquerry(p):
 
 def p_subquerry_combined(p):
     'subquerry : subquerry combine_keyword subquerry'
-    p[0] = f"{p[1]}\n{p[2]}\n{p[3]}"
+    p[0] = "%s\n%s\n%s" % (p[1], p[2], p[3])
 
 #             _              _   
 #  ___   ___ | |  ___   ___ | |_ 
@@ -194,12 +193,12 @@ def p_select_full_select(p):
 
 def p_select_full_more(p):
     'select_full : select_block additional_block_list'
-    p[0] = f"{p[1]}\n{p[2]}"
+    p[0] = "%s\n%s" % (p[1], p[2])
 
 def p_select_block(p):
     'select_block : select_keyword select_clause'
     p[2] = p[2].replace('\n','\n\t')
-    p[0] = f"{p[1]}\n\t{p[2]}"
+    p[0] = "%s\n\t%s" % (p[1], p[2])
 
 def p_select_keyword_alone(p):
     'select_keyword : select'
@@ -210,11 +209,11 @@ def p_select_keyword_enriched(p):
     select_keyword : select distinct
                    | select all
     '''
-    p[0] = f"{p[1]} {p[2]}"
+    p[0] = "%s %s" % (p[1], p[2])
 
 def p_select_clause_next(p):
     'select_clause : expr comma select_clause'
-    p[0] = f"{p[1]}{p[2]}\n{p[3]}"
+    p[0] = "%s%s\n%s" % (p[1], p[2], p[3])
 
 def p_select_clause_end(p):
     'select_clause : expr'
@@ -229,7 +228,7 @@ def p_select_clause_end(p):
 
 def p_additional_block_list_next(p):
     'additional_block_list : additional_block additional_block_list'
-    p[0] = f"{p[1]}\n{p[2]}"
+    p[0] = "%s\n%s" % (p[1], p[2])
 
 def p_additional_block_list_end(p):
     'additional_block_list : additional_block'
@@ -250,7 +249,7 @@ def p_keyword_block(p):
                   | limit clause
                   | having clause
     '''
-    p[0] = f"{p[1]} {p[2]}"
+    p[0] = "%s %s" % (p[1], p[2])
 
 def p_by_block(p):
     '''
@@ -260,7 +259,7 @@ def p_by_block(p):
              | distribute by clause
              | sort by clause
     '''
-    p[0] = f"{p[1]} {p[2]} {p[3]}" 
+    p[0] = "%s %s %s"  % (p[1], p[2], p[3])
 
 def p_clause(p):
     'clause : expr_list'
@@ -279,7 +278,7 @@ def p_combine_keyword_composed(p):
     combine_keyword : union all
                     | union distinct
     '''
-    p[0] = f"{p[1]} {p[2]}"
+    p[0] = "%s %s"
 
 def p_combine_keyword_alone(p):
     '''
@@ -298,15 +297,15 @@ def p_combine_keyword_alone(p):
 def p_join_block_on(p):
     'join_block : join_expression clause on expr_list'
     p[4] = p[4].replace('\n','\n\t')
-    p[0] = f"{p[1]} {p[2]}\n\t{p[3]} {p[4]}"
+    p[0] = "%s %s\n\t%s %s" % (p[1], p[2], p[3], p[4])
 
 def p_join_block_alone(p):
     'join_block : join_expression clause'
-    p[0] = f"{p[1]} {p[2]}"
+    p[0] = "%s %s" % (p[1], p[2])
 
 def p_join_expression(p):
     'join_expression : join_prefix_list join'
-    p[0] = f"{p[1]} {p[2]}"
+    p[0] = "%s %s" % (p[1], p[2])
 
 def p_join_expression_alone(p):
     'join_expression : join'
@@ -328,7 +327,7 @@ def p_join_prefix(p):
 
 def p_join_prefix_list_next(p):
     'join_prefix_list : join_prefix join_prefix_list'
-    p[0] = f"{p[1]} {p[2]}"
+    p[0] = "%s %s" % (p[1], p[2])
 
 def p_join_prefix_list_end(p):
     'join_prefix_list : join_prefix'
@@ -344,11 +343,11 @@ def p_join_prefix_list_end(p):
 def p_case_when(p):
     'case_when : case case_when_clause_list end'
     p[2] = p[2].replace('\n','\n\t')
-    p[0] = f"{p[1]}\n\t{p[2]}\n{p[3]}"
+    p[0] = "%s\n\t%s\n%s" % (p[1], p[2], p[3])
 
 def p_case_when_clause_list_next(p):
     'case_when_clause_list : case_when_clause case_when_clause_list'
-    p[0] = f"{p[1]}\n{p[2]}"
+    p[0] = "%s\n%s" % (p[1], p[2])
 
 def p_case_when_clause_list_end(p):
     'case_when_clause_list : case_when_clause'
@@ -357,11 +356,11 @@ def p_case_when_clause_list_end(p):
 def p_case_when_clause_if(p):
     'case_when_clause : when expr then expr'
     p[2] = p[2].replace('\n',' ').replace('\t','')
-    p[0] = f"{p[1]} {p[2]} {p[3]} {p[4]}"
+    p[0] = "%s %s %s %s" % (p[1], p[2], p[3], p[4])
 
 def p_case_when_clause_else(p):
     'case_when_clause : else expr'
-    p[0] = f"{p[1]} {p[2]}"
+    p[0] = "%s %s" % (p[1], p[2])
 
 #                                           _                  _  _       _   
 #   ___ __  __ _ __   _ __   ___  ___  ___ (_)  ___   _ __    | |(_) ___ | |_ 
@@ -377,13 +376,13 @@ def p_expr(p):
 def p_expr_definition_list_next(p):
     'expr_definition_list : expr_definition expr_definition_list'
     if p[2][0] in ['(', '[']:
-        p[0] = f"{p[1]}{p[2]}"
+        p[0] = "%s%s" % (p[1], p[2])
     else:
-        p[0] = f"{p[1]} {p[2]}"
+        p[0] = "%s %s" % (p[1], p[2])
 
 def p_expr_definition_list_point(p):
     'expr_definition_list : expr_definition point expr_definition_list'
-    p[0] = f"{p[1]}{p[2]}{p[3]}"
+    p[0] = "%s%s%s" % (p[1], p[2], p[3])
 
 def p_expr_definition_list_end(p):
     'expr_definition_list : expr_definition'
@@ -392,9 +391,9 @@ def p_expr_definition_list_end(p):
 def p_expr_definition_list_prefix(p):
     'expr_definition_list : not expr_definition_list'
     if len(p[1]) == 1:
-        p[0] = f"{p[1]}{p[2]}"
+        p[0] = "%s%s" % (p[1], p[2])
     else:
-        p[0] = f"{p[1]} {p[2]}"
+        p[0] = "%s %s" % (p[1], p[2])
 
 def p_expr_definition_list_infix(p):
     '''
@@ -404,12 +403,12 @@ def p_expr_definition_list_infix(p):
                          | expr_definition is expr_definition_list
                          | expr_definition in expr_definition_list
     '''
-    p[0] = f"{p[1]} {p[2]} {p[3]}"
+    p[0] = "%s %s %s" % (p[1], p[2], p[3])
 
 def p_expr_definition_list_between(p):
     'expr_definition_list : between expr_definition_list'
     p[2] = p[2].replace('\n',' ')
-    p[0] = f"{p[1]} {p[2]}"
+    p[0] = "%s %s" % (p[1], p[2])
 
 #                                           _               
 #   ___ __  __ _ __   _ __   ___  ___  ___ (_)  ___   _ __  
@@ -423,7 +422,7 @@ def p_expr_definition_list_boolean(p):
     expr_definition_list : expr_definition and expr_definition_list
                          | expr_definition or expr_definition_list
     '''
-    p[0] = f"{p[1]}\n{p[2]} {p[3]}"
+    p[0] = "%s\n%s %s" % (p[1], p[2], p[3])
 
 def p_expr_definition_value(p):
     '''
@@ -459,21 +458,21 @@ def p_expr_definition_block(p):
 
 def p_expr_definition_brackets(p):
     'expr_definition : left_bra expr_list right_bra'
-    p[0] = f"{p[1]}{p[2]}{p[3]}"
+    p[0] = "%s%s%s" % (p[1], p[2], p[3])
 
 def p_expr_definition_parentheses(p):
     'expr_definition : left_par expr_list right_par'
     if is_numeric_expression(p[2]):
         p[2] = p[2].replace('\n',' ')
-        p[0] = f"{p[1]}{p[2]}{p[3]}"
+        p[0] = "%s%s%s" % (p[1], p[2], p[3])
     else:
         p[2] = p[2].replace('\n','\n\t')
-        p[0] = f"{p[1]}\n\t{p[2]}\n{p[3]}"
+        p[0] = "%s\n\t%s\n%s" % (p[1], p[2], p[3])
         
 
 def p_expr_list_next(p):
     'expr_list : expr_definition_list comma expr_list'
-    p[0] = f"{p[1]}{p[2]}\n{p[3]}"
+    p[0] = "%s%s\n%s" % (p[1], p[2], p[3])
 
 def p_expr_list_end(p):
     'expr_list : expr_definition_list'
@@ -616,7 +615,7 @@ def p_token_commented(p):
     string_double : string_double comment
     string_grave : string_grave comment
     '''
-    p[0] = f"{p[1]}{p[2]}"
+    p[0] = "%s%s" % (p[1], p[2])
 
 #                                                  _        
 #   ___   ___   _ __ ___   _ __ ___    ___  _ __  | |_  ___ 
@@ -627,11 +626,11 @@ def p_token_commented(p):
 
 def p_comment(p):
     'comment : COMMENT'
-    p[0] = f" {p[1]}\n"
+    p[0] = " %s\n" % p[1]
 
 def p_comment_alone(p):
     'comment : COMMENT_ALONE'
-    p[0] = f"\n{p[1]}\n"
+    p[0] = "\n%s\n" % p[1]
    
 #   ___  _ __  _ __   ___   _ __ 
 #  / _ \| '__|| '__| / _ \ | '__|
@@ -639,7 +638,8 @@ def p_comment_alone(p):
 #  \___||_|   |_|    \___/ |_|
 
 def p_error(p):
-    print("Syntax error at '%s'" % p.value)
+    raise SyntaxError("Syntax error at '%s'" % p.value)
+
 
 lex.lex()
 yacc.yacc()

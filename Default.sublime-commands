@@ -1,0 +1,6 @@
+[
+    {
+        "caption": "SQL Formatter: Format Query",
+        "command": "format_query"
+    }
+]
