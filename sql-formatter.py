@@ -20,4 +20,4 @@ class FormatQueryCommand(sublime_plugin.TextCommand):
 			self.view.replace(edit, region, formatted_text)
 
 		if "Plain text" in self.view.settings().get('syntax'):
-			self.view.set_syntax_file("Packages/SQL/SQL.sublime-syntax")
+			self.view.set_syntax_file("Packages/SQL/SQL.tmLanguage")
