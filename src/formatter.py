@@ -645,4 +645,5 @@ lex.lex()
 yacc.yacc()
 
 def format_query(query):
-    return yacc.parse(query)
+    sanitized_query = trim_query(query)
+    return yacc.parse(sanitized_query)
