@@ -65,6 +65,7 @@ import sys
 import os.path
 import inspect
 import warnings
+import importlib
 
 __version__    = '3.11'
 __tabversion__ = '3.10'
@@ -1981,7 +1982,7 @@ class LRTable(object):
         if isinstance(module, types.ModuleType):
             parsetab = module
         else:
-            exec('import %s' % module)
+            importlib.import_module(module)
             parsetab = sys.modules[module]
 
         if parsetab._tabversion != __tabversion__:
@@ -3257,7 +3258,7 @@ def yacc(method='LALR', debug=yaccdebug, module=None, tabmodule=tab_module, star
             else:
                 parts = tabmodule.split('.')
                 pkgname = '.'.join(parts[:-1])
-                exec('import %s' % pkgname)
+                importlib.import_module(pkgname)
                 srcfile = getattr(sys.modules[pkgname], '__file__', '')
         outputdir = os.path.dirname(srcfile)
 

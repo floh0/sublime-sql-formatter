@@ -1,11 +1,7 @@
 import sublime
 import sublime_plugin
 
-import os
-import sys
-
-sys.path.append(os.path.dirname(__file__))
-from src import formatter
+from .src import formatter
 
 class FormatQueryCommand(sublime_plugin.TextCommand):
 	def run(self, edit):

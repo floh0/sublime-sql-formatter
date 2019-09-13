@@ -40,6 +40,7 @@ import types
 import copy
 import os
 import inspect
+import importlib
 
 # This tuple contains known string types
 try:
@@ -212,7 +213,7 @@ class Lexer:
         if isinstance(tabfile, types.ModuleType):
             lextab = tabfile
         else:
-            exec('import %s' % tabfile)
+            importlib.import_module(tabfile)
             lextab = sys.modules[tabfile]
 
         if getattr(lextab, '_tabversion', '0.0') != __tabversion__:
@@ -1033,7 +1034,7 @@ def lex(module=None, object=None, debug=False, optimize=False, lextab='lextab',
                 else:
                     parts = lextab.split('.')
                     pkgname = '.'.join(parts[:-1])
-                    exec('import %s' % pkgname)
+                    importlib.import_module(pkgname)
                     srcfile = getattr(sys.modules[pkgname], '__file__', '')
             outputdir = os.path.dirname(srcfile)
         try:
