@@ -5,10 +5,11 @@ from .src import formatter
 
 class FormatQueryCommand(sublime_plugin.TextCommand):
 	def run(self, edit):
+		regions = []
 		selection = self.view.sel()
 		if len(selection) > 1 or not selection[0].empty():
 			regions = [region for region in selection if not(region.empty())]
-		else:
+		if not regions:
 			regions = [sublime.Region(0, self.view.size())]
 
 		for region in regions:
