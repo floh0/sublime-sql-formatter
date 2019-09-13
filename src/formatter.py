@@ -278,7 +278,7 @@ def p_combine_keyword_composed(p):
     combine_keyword : union all
                     | union distinct
     '''
-    p[0] = "%s %s"
+    p[0] = "%s %s" % (p[1], p[2])
 
 def p_combine_keyword_alone(p):
     '''
