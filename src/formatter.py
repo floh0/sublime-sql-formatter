@@ -174,7 +174,7 @@ def p_query_with_comment(p):
 #                        |_|                          |___/ 
 
 def p_subquerry(p):
-    'subquerry : expr_definition'
+    'subquerry : expr_definition_list'
     p[0] = p[1]
 
 def p_subquerry_combined(p):
