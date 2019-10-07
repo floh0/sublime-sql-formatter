@@ -130,8 +130,9 @@ comments_regex = re.compile(r'--\s*')
 comments_alone_regex = re.compile(r'^\s*--', re.MULTILINE)
 remove_useless_whitespaces = lambda x: comments_alone_regex.sub('--', comments_regex.sub('-- ', spaces_start_regex.sub('', empty_line_regex.sub('\n', x)))).strip()
 
-comma_without_space_regex = re.compile(r',(?! )')
-add_space_after_comma = lambda x: comma_without_space_regex.sub(', ', x)
+space_after_left_par_regex = re.compile(r'\( ')
+space_before_right_par_regex = re.compile(r' \)')
+sanitize_one_line_subquery = lambda x: space_after_left_par_regex.sub('(', space_before_right_par_regex.sub(')' ,x))
 
 #   __ _  _ __   __ _  _ __ ___   _ __ ___    __ _  _ __ 
 #  / _` || '__| / _` || '_ ` _ \ | '_ ` _ \  / _` || '__|
@@ -358,7 +359,7 @@ def p_case_when_clause_list_end(p):
 
 def p_case_when_clause_if(p):
     'case_when_clause : when expr then expr'
-    p[2] = add_space_after_comma(p[2].replace('\n','').replace('\t',''))
+    p[2] = sanitize_one_line_subquery(p[2].replace('\n',' ').replace('\t',''))
     p[0] = "%s %s %s %s" % (p[1], p[2], p[3], p[4])
 
 def p_case_when_clause_else(p):
