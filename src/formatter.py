@@ -460,6 +460,10 @@ def p_expr_definition_block(p):
     '''
     p[0] = p[1]
 
+def p_expr_definition_symbol(p):
+    'expr_definition : symbol expr_definition'
+    p[0] = "%s%s" % (p[1], p[2])
+
 def p_expr_definition_brackets(p):
     'expr_definition : left_bra expr_list right_bra'
     p[0] = "%s%s%s" % (p[1], p[2], p[3])
