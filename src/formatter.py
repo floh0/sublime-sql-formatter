@@ -56,7 +56,8 @@ reserved = {
     'full': 'FULL',
     'semi': 'SEMI',
     'cross': 'CROSS',
-    'natural': 'NATURAL'
+    'natural': 'NATURAL',
+    'with': 'WITH'
 }
 
 tokens = [
@@ -94,7 +95,7 @@ t_STRING_DOUBLE = r'\".*?\"'
 t_STRING_GRAVE = r'\`.*?\`'
 
 def t_LABEL(t):
-     r'[a-zA-Z0-9$\{\}\_\:\@]+'
+     r'[a-zA-Z0-9$\{\}\_\:\@\#]+'
      t.type = reserved.get(t.value.lower(),'LABEL')        # Check for reserved words
      return t
 
@@ -406,6 +407,7 @@ def p_expr_definition_list_infix(p):
                          | expr_definition as expr_definition_list
                          | expr_definition is expr_definition_list
                          | expr_definition in expr_definition_list
+                         | expr_definition with expr_definition_list
     '''
     p[0] = "%s %s %s" % (p[1], p[2], p[3])
 
@@ -539,6 +541,7 @@ def p_token_to_upper(p):
     semi : SEMI
     cross : CROSS
     natural : NATURAL
+    with : WITH
     '''
     p[0] = p[1].upper()
 
@@ -608,6 +611,7 @@ def p_token_commented(p):
     semi : semi comment
     cross : cross comment
     natural : natural comment
+    with : with comment
     comma : comma comment
     comparison : comparison comment
     star : star comment
@@ -655,3 +659,5 @@ yacc.yacc()
 def format_query(query):
     sanitized_query = trim_query(query)
     return yacc.parse(sanitized_query)
+
+
