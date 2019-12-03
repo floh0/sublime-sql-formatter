@@ -182,10 +182,6 @@ def p_subquerry(p):
     'subquerry : expr_definition_list'
     p[0] = p[1]
 
-def p_subquerry_combined(p):
-    'subquerry : subquerry combine_keyword subquerry'
-    p[0] = "%s\n%s\n%s" % (p[1], p[2], p[3])
-
 #             _              _   
 #  ___   ___ | |  ___   ___ | |_ 
 # / __| / _ \| | / _ \ / __|| __|
@@ -380,7 +376,7 @@ def p_expr(p):
 
 def p_expr_definition_list_next(p):
     'expr_definition_list : expr_definition expr_definition_list'
-    if p[2][0] in ['(', '[']:
+    if p[2][0] in ['(', '[', '+', '-']:
         p[0] = "%s%s" % (p[1], p[2])
     else:
         p[0] = "%s %s" % (p[1], p[2])
@@ -415,6 +411,10 @@ def p_expr_definition_list_between(p):
     'expr_definition_list : between expr_definition_list'
     p[2] = p[2].replace('\n',' ')
     p[0] = "%s %s" % (p[1], p[2])
+
+def p_expr_definition_list_combined(p):
+    'expr_definition_list : expr_definition_list combine_keyword expr_definition_list'
+    p[0] = "%s\n%s\n%s" % (p[1], p[2], p[3])
 
 #                                           _               
 #   ___ __  __ _ __   _ __   ___  ___  ___ (_)  ___   _ __  
@@ -452,6 +452,7 @@ def p_expr_definition_keyword(p):
                     | concat
                     | asc
                     | desc
+                    | symbol
     '''
     p[0] = p[1]
 
@@ -461,10 +462,6 @@ def p_expr_definition_block(p):
                     | select_full
     '''
     p[0] = p[1]
-
-def p_expr_definition_symbol(p):
-    'expr_definition : symbol expr_definition'
-    p[0] = "%s%s" % (p[1], p[2])
 
 def p_expr_definition_brackets(p):
     'expr_definition : left_bra expr_list right_bra'
@@ -659,5 +656,3 @@ yacc.yacc()
 def format_query(query):
     sanitized_query = trim_query(query)
     return yacc.parse(sanitized_query)
-
-
