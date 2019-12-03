@@ -376,7 +376,7 @@ def p_expr(p):
 
 def p_expr_definition_list_next(p):
     'expr_definition_list : expr_definition expr_definition_list'
-    if p[2][0] in ['(', '[', '+', '-']:
+    if p[2][0] in ['(', '['] or p[1] in ['+', '-']:
         p[0] = "%s%s" % (p[1], p[2])
     else:
         p[0] = "%s %s" % (p[1], p[2])
@@ -413,7 +413,7 @@ def p_expr_definition_list_between(p):
     p[0] = "%s %s" % (p[1], p[2])
 
 def p_expr_definition_list_combined(p):
-    'expr_definition_list : expr_definition_list combine_keyword expr_definition_list'
+    'expr_definition_list : select_full combine_keyword expr_definition_list'
     p[0] = "%s\n%s\n%s" % (p[1], p[2], p[3])
 
 #                                           _               
