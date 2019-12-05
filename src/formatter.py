@@ -65,7 +65,6 @@ tokens = [
     'COMMENT_ALONE',
     'COMMA',
     'COMPARISON',
-    'STAR',
     'SYMBOL',
     'SEMICOLON',
     'POINT',
@@ -82,8 +81,7 @@ tokens = [
 t_COMMA = r','
 t_COMPARISON = r'!?[=<>]+'
 t_NOT = r'[!~]'
-t_STAR = r'\*'
-t_SYMBOL = r'[\%\&\+\-\/\^\|]'
+t_SYMBOL = r'[\*\%\&\+\-\/\^\|]'
 t_SEMICOLON = r';'
 t_POINT = r'\.'
 t_LEFT_PAR = r'\('
@@ -192,6 +190,15 @@ def p_select_full_select(p):
     'select_full : select_block'
     p[0] = p[1]
 
+def p_select_full_combined(p):
+    'select_full : select_full combine_keyword select_full'
+    p[0] = "%s\n%s\n%s" % (p[1], p[2], p[3])
+
+def p_select_full_parentheses(p):
+    'select_full : left_par select_full right_par'
+    p[2] = p[2].replace('\n','\n\t')
+    p[0] = "%s\n\t%s\n%s" % (p[1], p[2], p[3])
+
 def p_select_full_more(p):
     'select_full : select_block additional_block_list'
     p[0] = "%s\n%s" % (p[1], p[2])
@@ -264,7 +271,7 @@ def p_by_block(p):
 
 def p_clause(p):
     'clause : expr_list'
-    if (p[1][0] != '(' or p[1][-1] != ')') and '\n' in p[1]:
+    if p[1][0] != '(' and '\n' in p[1]:
         p[1] = p[1].replace('\n','\n\t')
     p[0] = p[1]
 
@@ -412,10 +419,6 @@ def p_expr_definition_list_between(p):
     p[2] = p[2].replace('\n',' ')
     p[0] = "%s %s" % (p[1], p[2])
 
-def p_expr_definition_list_combined(p):
-    'expr_definition_list : select_full combine_keyword expr_definition_list'
-    p[0] = "%s\n%s\n%s" % (p[1], p[2], p[3])
-
 #                                           _               
 #   ___ __  __ _ __   _ __   ___  ___  ___ (_)  ___   _ __  
 #  / _ \\ \/ /| '_ \ | '__| / _ \/ __|/ __|| | / _ \ | '_ \ 
@@ -443,7 +446,6 @@ def p_expr_definition_keyword(p):
     '''
     expr_definition : distinct
                     | all
-                    | star
                     | null
                     | true
                     | false
@@ -546,7 +548,6 @@ def p_token_unchanged(p):
     '''
     comma : COMMA
     comparison : COMPARISON
-    star : STAR
     symbol : SYMBOL
     semicolon : SEMICOLON
     point : POINT
@@ -611,7 +612,6 @@ def p_token_commented(p):
     with : with comment
     comma : comma comment
     comparison : comparison comment
-    star : star comment
     symbol : symbol comment
     semicolon : semicolon comment
     point : point comment
