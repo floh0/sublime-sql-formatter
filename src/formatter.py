@@ -5,6 +5,20 @@ from .ply import yacc
 from .ply import lex
 import re
 
+#              _   _                 
+#   ___  _ __ | |_(_) ___  _ __  ___ 
+#  / _ \| '_ \| __| |/ _ \| '_ \/ __|
+# | (_) | |_) | |_| | (_) | | | \__ \
+#  \___/| .__/ \__|_|\___/|_| |_|___/
+#       |_|                          
+
+options = {
+    "tab": "\t",
+    "newline": "\n",
+    "newline_sep": "\n",
+    "drop_comments": False    
+}
+
 #  _           _                      
 # | |_   ___  | | __  ___  _ __   ___ 
 # | __| / _ \ | |/ / / _ \| '_ \ / __|
@@ -23,6 +37,7 @@ reserved = {
     'cluster': 'CLUSTER',
     'distribute': 'DISTRIBUTE',
     'sort': 'SORT',
+    'partition': 'PARTITION',
     'having': 'HAVING',
     'limit': 'LIMIT',
     'as': 'AS',
@@ -57,7 +72,8 @@ reserved = {
     'semi': 'SEMI',
     'cross': 'CROSS',
     'natural': 'NATURAL',
-    'with': 'WITH'
+    'with': 'WITH',
+    'over': 'OVER'
 }
 
 tokens = [
@@ -192,21 +208,21 @@ def p_select_full_select(p):
 
 def p_select_full_combined(p):
     'select_full : select_full combine_keyword select_full'
-    p[0] = "%s\n%s\n%s" % (p[1], p[2], p[3])
+    p[0] = "%s%s%s%s%s" % (p[1], options["newline_sep"], p[2], options["newline_sep"], p[3])
 
 def p_select_full_parentheses(p):
     'select_full : left_par select_full right_par'
     p[2] = p[2].replace('\n','\n\t')
-    p[0] = "%s\n\t%s\n%s" % (p[1], p[2], p[3])
+    p[0] = "%s%s%s%s%s%s" % (p[1], options["newline"], options["tab"], p[2], options["newline"], p[3])
 
 def p_select_full_more(p):
     'select_full : select_block additional_block_list'
-    p[0] = "%s\n%s" % (p[1], p[2])
+    p[0] = "%s%s%s" % (p[1], options["newline_sep"], p[2])
 
 def p_select_block(p):
     'select_block : select_keyword select_clause'
     p[2] = p[2].replace('\n','\n\t')
-    p[0] = "%s\n\t%s" % (p[1], p[2])
+    p[0] = "%s%s%s%s" % (p[1], options["newline_sep"], options["tab"], p[2])
 
 def p_select_keyword_alone(p):
     'select_keyword : select'
@@ -221,7 +237,7 @@ def p_select_keyword_enriched(p):
 
 def p_select_clause_next(p):
     'select_clause : expr comma select_clause'
-    p[0] = "%s%s\n%s" % (p[1], p[2], p[3])
+    p[0] = "%s%s%s%s" % (p[1], p[2], options["newline"], p[3])
 
 def p_select_clause_end(p):
     'select_clause : expr'
@@ -236,7 +252,7 @@ def p_select_clause_end(p):
 
 def p_additional_block_list_next(p):
     'additional_block_list : additional_block additional_block_list'
-    p[0] = "%s\n%s" % (p[1], p[2])
+    p[0] = "%s%s%s" % (p[1], options["newline_sep"], p[2])
 
 def p_additional_block_list_end(p):
     'additional_block_list : additional_block'
@@ -266,6 +282,7 @@ def p_by_block(p):
              | cluster by clause
              | distribute by clause
              | sort by clause
+             | partition by clause
     '''
     p[0] = "%s %s %s"  % (p[1], p[2], p[3])
 
@@ -305,7 +322,7 @@ def p_combine_keyword_alone(p):
 def p_join_block_on(p):
     'join_block : join_expression clause on expr_list'
     p[4] = p[4].replace('\n','\n\t')
-    p[0] = "%s %s\n\t%s %s" % (p[1], p[2], p[3], p[4])
+    p[0] = "%s %s%s%s%s %s" % (p[1], p[2], options["newline_sep"], options["tab"], p[3], p[4])
 
 def p_join_block_alone(p):
     'join_block : join_expression clause'
@@ -351,11 +368,11 @@ def p_join_prefix_list_end(p):
 def p_case_when(p):
     'case_when : case case_when_clause_list end'
     p[2] = p[2].replace('\n','\n\t')
-    p[0] = "%s\n\t%s\n%s" % (p[1], p[2], p[3])
+    p[0] = "%s%s%s%s%s%s" % (p[1], options["newline_sep"], options["tab"], p[2], options["newline_sep"], p[3])
 
 def p_case_when_clause_list_next(p):
     'case_when_clause_list : case_when_clause case_when_clause_list'
-    p[0] = "%s\n%s" % (p[1], p[2])
+    p[0] = "%s%s%s" % (p[1], options["newline_sep"], p[2])
 
 def p_case_when_clause_list_end(p):
     'case_when_clause_list : case_when_clause'
@@ -369,6 +386,30 @@ def p_case_when_clause_if(p):
 def p_case_when_clause_else(p):
     'case_when_clause : else expr'
     p[0] = "%s %s" % (p[1], p[2])
+
+#   _____   _____ _ __ 
+#  / _ \ \ / / _ \ '__|
+# | (_) \ V /  __/ |   
+#  \___/ \_/ \___|_|   
+
+def p_over_block(p):
+    'over_block : over left_par over_clause_list right_par'
+    p[3] = p[3].replace('\n','\n\t')
+    p[0] = "%s %s%s%s%s%s%s" % (p[1], p[2], options["newline"], options["tab"], p[3], options["newline"], p[4])
+
+def p_over_clause_list_next(p):
+    'over_clause_list : over_clause_list over_clause'
+    p[0] = "%s%s%s" % (p[1], options["newline_sep"], p[2])
+
+def p_over_clause_list_alone(p):
+    'over_clause_list : over_clause'
+    p[0] = p[1]
+
+def p_over_clause(p):
+    'over_clause : by_block'
+    p[0] = p[1].replace('\t',' ').replace('\n','')
+
+                     
 
 #                                           _                  _  _       _   
 #   ___ __  __ _ __   _ __   ___  ___  ___ (_)  ___   _ __    | |(_) ___ | |_ 
@@ -431,7 +472,7 @@ def p_expr_definition_list_boolean(p):
     expr_definition_list : expr_definition and expr_definition_list
                          | expr_definition or expr_definition_list
     '''
-    p[0] = "%s\n%s %s" % (p[1], p[2], p[3])
+    p[0] = "%s%s%s %s" % (p[1], options["newline_sep"], p[2], p[3])
 
 def p_expr_definition_value(p):
     '''
@@ -462,12 +503,17 @@ def p_expr_definition_block(p):
     '''
     expr_definition : case_when
                     | select_full
+                    | over_block
     '''
     p[0] = p[1]
 
 def p_expr_definition_brackets(p):
     'expr_definition : left_bra expr_list right_bra'
     p[0] = "%s%s%s" % (p[1], p[2], p[3])
+
+def p_expr_definition_brackets_empty(p):
+    'expr_definition : left_bra right_bra'
+    p[0] = "%s%s" % (p[1], p[2])
 
 def p_expr_definition_parentheses(p):
     'expr_definition : left_par expr_list right_par'
@@ -476,12 +522,16 @@ def p_expr_definition_parentheses(p):
         p[0] = "%s%s%s" % (p[1], p[2], p[3])
     else:
         p[2] = p[2].replace('\n','\n\t')
-        p[0] = "%s\n\t%s\n%s" % (p[1], p[2], p[3])
+        p[0] = "%s%s%s%s%s%s" % (p[1], options["newline"], options["tab"], p[2], options["newline"], p[3])
+
+def p_expr_definition_parentheses_empty(p):
+    'expr_definition : left_par right_par'
+    p[0] = "%s%s" % (p[1], p[2])
         
 
 def p_expr_list_next(p):
     'expr_list : expr_definition_list comma expr_list'
-    p[0] = "%s%s\n%s" % (p[1], p[2], p[3])
+    p[0] = "%s%s%s%s" % (p[1], p[2], options["newline"], p[3])
 
 def p_expr_list_end(p):
     'expr_list : expr_definition_list'
@@ -506,6 +556,7 @@ def p_token_to_upper(p):
     cluster : CLUSTER
     distribute : DISTRIBUTE
     sort : SORT
+    partition : PARTITION
     having : HAVING
     limit : LIMIT
     as : AS
@@ -541,6 +592,7 @@ def p_token_to_upper(p):
     cross : CROSS
     natural : NATURAL
     with : WITH
+    over : OVER
     '''
     p[0] = p[1].upper()
 
@@ -575,6 +627,7 @@ def p_token_commented(p):
     cluster : cluster comment
     distribute : distribute comment
     sort : sort comment
+    partition : partition comment
     having : having comment
     limit : limit comment
     as : as comment
@@ -610,6 +663,7 @@ def p_token_commented(p):
     cross : cross comment
     natural : natural comment
     with : with comment
+    over : over comment
     comma : comma comment
     comparison : comparison comment
     symbol : symbol comment
@@ -635,11 +689,17 @@ def p_token_commented(p):
 
 def p_comment(p):
     'comment : COMMENT'
-    p[0] = " %s\n" % p[1]
+    if options["drop_comments"]:
+        p[0] = ""
+    else:
+        p[0] = " %s\n" % p[1]
 
 def p_comment_alone(p):
     'comment : COMMENT_ALONE'
-    p[0] = "\n%s\n" % p[1]
+    if options["drop_comments"]:
+        p[0] = ""
+    else:
+        p[0] = "\n%s\n" % p[1]
    
 #   ___  _ __  _ __   ___   _ __ 
 #  / _ \| '__|| '__| / _ \ | '__|
@@ -653,6 +713,19 @@ def p_error(p):
 lex.lex()
 yacc.yacc()
 
-def format_query(query):
+def set_options(minify):
+    if minify:
+        options["tab"] = ""
+        options["newline"] = ""
+        options["newline_sep"] = " "
+        options["drop_comments"] = True
+    else:
+        options["tab"] = "\t"
+        options["newline"] = "\n"
+        options["newline_sep"] = "\n"
+        options["drop_comments"] = False
+
+def format_query(query, minify=False):
+    set_options(minify)
     sanitized_query = trim_query(query)
     return yacc.parse(sanitized_query)

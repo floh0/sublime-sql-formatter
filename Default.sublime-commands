@@ -2,5 +2,9 @@
     {
         "caption": "SQL Formatter: Format Query",
         "command": "format_query"
+    },
+    {
+        "caption": "SQL Formatter: Minify Query",
+        "command": "minify_query"
     }
 ]
