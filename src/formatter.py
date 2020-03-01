@@ -73,6 +73,7 @@ reserved = {
     'cross': 'CROSS',
     'natural': 'NATURAL',
     'with': 'WITH',
+    'option': 'OPTION',
     'over': 'OVER'
 }
 
@@ -116,28 +117,24 @@ def t_LABEL(t):
      return t
 
 def t_COMMENT_ALONE(t):
-    r'(^|(?<=\n))--[^\n]*'
-    return t
+    r'((^|(?<=\n))(?:\s*)--[^\n]*)|\s'
+    if '--' in t.value:
+        return t
+    else:
+        pass
 
 def t_COMMENT(t):
     r'--[^\n]*'
     return t
 
-
-t_ignore = ' \t\n'
-
 def t_error(t):
-    print(t)
-    raise ValueError("Illegal value '%s'" % t.value)
+    raise ValueError(t.lexpos)
 
 #  _ __   ___   __ _   ___ __  __
 # | '__| / _ \ / _` | / _ \\ \/ /
 # | |   |  __/| (_| ||  __/ >  < 
 # |_|    \___| \__, | \___|/_/\_\
 #              |___/             
-
-trim_line_regex = re.compile(r'^\s+', re.MULTILINE)
-trim_query = lambda x: trim_line_regex.sub('', x)
 
 numeric_regex = re.compile(r'^[\s\d\.\+\-\*\/\^\%\&\|\(\)\=\<\>\!\~\,\$]*$')
 is_numeric_expression = lambda x: numeric_regex.match(x)
@@ -275,6 +272,7 @@ def p_keyword_block(p):
                   | where clause
                   | limit clause
                   | having clause
+                  | option clause
     '''
     p[0] = "%s %s" % (p[1], p[2])
 
@@ -521,9 +519,13 @@ def p_expr_definition_brackets_empty(p):
     p[0] = "%s%s" % (p[1], p[2])
 
 def p_expr_definition_parentheses_unique(p):
-    'expr_definition : left_par expr_definition right_par'
-    p[2] = p[2].replace('\n',' ')
-    p[0] = "%s%s%s" % (p[1], p[2], p[3])
+    'expr_definition : left_par expr_definition_list right_par'
+    if "\t" in p[2]:
+        p[2] = p[2].replace('\n','\n\t')
+        p[0] = "%s%s%s%s%s%s" % (p[1], options["newline"], options["tab"], p[2], options["newline"], p[3])
+    else:
+        p[2] = p[2].replace('\n',' ').replace('\t','')
+        p[0] = "%s%s%s" % (p[1], p[2], p[3])
 
 def p_expr_definition_parentheses(p):
     'expr_definition : left_par expr_list right_par'
@@ -602,6 +604,7 @@ def p_token_to_upper(p):
     cross : CROSS
     natural : NATURAL
     with : WITH
+    option : OPTION
     over : OVER
     '''
     p[0] = p[1].upper()
@@ -674,6 +677,7 @@ def p_token_commented(p):
     cross : cross comment
     natural : natural comment
     with : with comment
+    option : option comment
     over : over comment
     comma : comma comment
     comparison : comparison comment
@@ -719,9 +723,8 @@ def p_comment_alone(p):
 #  \___||_|   |_|    \___/ |_|
 
 def p_error(p):
-    raise SyntaxError("Syntax error at '%s'" % p.value)
-
-
+    raise SyntaxError(p.lexpos if p else -1)
+    
 lex.lex()
 yacc.yacc()
 
@@ -739,5 +742,4 @@ def set_options(minify):
 
 def format_query(query, minify=False):
     set_options(minify)
-    sanitized_query = trim_query(query)
-    return yacc.parse(sanitized_query)
+    return yacc.parse(query)
