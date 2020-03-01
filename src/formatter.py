@@ -91,7 +91,8 @@ tokens = [
     'RIGHT_BRA',
     'STRING_SIMPLE',
     'STRING_DOUBLE',
-    'STRING_GRAVE'
+    'STRING_GRAVE',
+    'TEMPLATE'
 ] + list(reserved.values())
 
 t_COMMA = r','
@@ -107,9 +108,10 @@ t_RIGHT_BRA = r'\]'
 t_STRING_SIMPLE = r'\'.*?\''
 t_STRING_DOUBLE = r'\".*?\"'
 t_STRING_GRAVE = r'\`.*?\`'
+t_TEMPLATE = r'\#[a-zA-Z0-9$\{\}\_\:\@\(\)\[\]]+\#?'
 
 def t_LABEL(t):
-     r'[a-zA-Z0-9$\{\}\_\:\@\#]+'
+     r'[a-zA-Z0-9$\{\}\_\:\@]+'
      t.type = reserved.get(t.value.lower(),'LABEL')        # Check for reserved words
      return t
 
@@ -125,6 +127,7 @@ def t_COMMENT(t):
 t_ignore = ' \t\n'
 
 def t_error(t):
+    print(t)
     raise ValueError("Illegal value '%s'" % t.value)
 
 #  _ __   ___   __ _   ___ __  __
@@ -380,7 +383,7 @@ def p_case_when_clause_list_end(p):
 
 def p_case_when_clause_if(p):
     'case_when_clause : when expr then expr'
-    p[2] = sanitize_one_line_subquery(p[2].replace('\n',' ').replace('\t',''))
+    p[2] = p[2].replace('\n','\n\t')
     p[0] = "%s %s %s %s" % (p[1], p[2], p[3], p[4])
 
 def p_case_when_clause_else(p):
@@ -480,6 +483,7 @@ def p_expr_definition_value(p):
                     | string_simple
                     | string_double
                     | string_grave
+                    | template
     '''
     p[0] = p[1]
 
@@ -509,11 +513,17 @@ def p_expr_definition_block(p):
 
 def p_expr_definition_brackets(p):
     'expr_definition : left_bra expr_list right_bra'
+    p[2] = sanitize_one_line_subquery(p[2].replace('\n',' ').replace('\t',''))
     p[0] = "%s%s%s" % (p[1], p[2], p[3])
 
 def p_expr_definition_brackets_empty(p):
     'expr_definition : left_bra right_bra'
     p[0] = "%s%s" % (p[1], p[2])
+
+def p_expr_definition_parentheses_unique(p):
+    'expr_definition : left_par expr_definition right_par'
+    p[2] = p[2].replace('\n',' ')
+    p[0] = "%s%s%s" % (p[1], p[2], p[3])
 
 def p_expr_definition_parentheses(p):
     'expr_definition : left_par expr_list right_par'
@@ -611,6 +621,7 @@ def p_token_unchanged(p):
     string_simple : STRING_SIMPLE
     string_double : STRING_DOUBLE
     string_grave : STRING_GRAVE
+    template : TEMPLATE
     '''
     p[0] = p[1]
 
@@ -677,6 +688,7 @@ def p_token_commented(p):
     string_simple : string_simple comment
     string_double : string_double comment
     string_grave : string_grave comment
+    template : template comment
     '''
     p[0] = "%s%s" % (p[1], p[2])
 
