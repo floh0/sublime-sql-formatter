@@ -109,12 +109,14 @@ t_RIGHT_BRA = r'\]'
 t_STRING_SIMPLE = r'\'.*?\''
 t_STRING_DOUBLE = r'\".*?\"'
 t_STRING_GRAVE = r'\`.*?\`'
-t_TEMPLATE = r'\#[a-zA-Z0-9$\{\}\_\:\@\(\)\[\]]+\#?'
 
 def t_LABEL(t):
-     r'[a-zA-Z0-9$\{\}\_\:\@]+'
-     t.type = reserved.get(t.value.lower(),'LABEL')        # Check for reserved words
-     return t
+    r'[a-zA-Z0-9$\{\}\_\:\@\(\)\[\]\#]+|[a-zA-Z0-9$\{\}\_\:\@]+'
+    if '#' in t.value:
+        t.type = 'TEMPLATE'
+    else:
+        t.type = reserved.get(t.value.lower(),'LABEL')  # Check for reserved words
+    return t
 
 def t_COMMENT_ALONE(t):
     r'((^|(?<=\n))(?:\s*)--[^\n]*)|\s'
@@ -382,6 +384,7 @@ def p_case_when_clause_list_end(p):
 def p_case_when_clause_if(p):
     'case_when_clause : when expr then expr'
     p[2] = p[2].replace('\n','\n\t')
+    p[4] = p[4].replace('\n','\n\t')
     p[0] = "%s %s %s %s" % (p[1], p[2], p[3], p[4])
 
 def p_case_when_clause_else(p):
