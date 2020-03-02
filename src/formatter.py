@@ -92,8 +92,7 @@ tokens = [
     'RIGHT_BRA',
     'STRING_SIMPLE',
     'STRING_DOUBLE',
-    'STRING_GRAVE',
-    'TEMPLATE'
+    'STRING_GRAVE'
 ] + list(reserved.values())
 
 t_COMMA = r','
@@ -111,12 +110,9 @@ t_STRING_DOUBLE = r'\".*?\"'
 t_STRING_GRAVE = r'\`.*?\`'
 
 def t_LABEL(t):
-    r'[a-zA-Z0-9$\{\}\_\:\@\(\)\[\]\#]+|[a-zA-Z0-9$\{\}\_\:\@]+'
-    if '#' in t.value:
-        t.type = 'TEMPLATE'
-    else:
-        t.type = reserved.get(t.value.lower(),'LABEL')  # Check for reserved words
-    return t
+     r'[a-zA-Z0-9$\{\}\_\:\@\#]+'
+     t.type = reserved.get(t.value.lower(),'LABEL')        # Check for reserved words
+     return t
 
 def t_COMMENT_ALONE(t):
     r'((^|(?<=\n))(?:\s*)--[^\n]*)|\s'
@@ -484,7 +480,6 @@ def p_expr_definition_value(p):
                     | string_simple
                     | string_double
                     | string_grave
-                    | template
     '''
     p[0] = p[1]
 
@@ -627,7 +622,6 @@ def p_token_unchanged(p):
     string_simple : STRING_SIMPLE
     string_double : STRING_DOUBLE
     string_grave : STRING_GRAVE
-    template : TEMPLATE
     '''
     p[0] = p[1]
 
@@ -695,7 +689,6 @@ def p_token_commented(p):
     string_simple : string_simple comment
     string_double : string_double comment
     string_grave : string_grave comment
-    template : template comment
     '''
     p[0] = "%s%s" % (p[1], p[2])
 
