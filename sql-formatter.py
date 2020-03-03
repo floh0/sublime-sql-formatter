@@ -24,9 +24,9 @@ def call_formatter(self, edit, minify):
 			right = max(region.a, region.b)
 			err_pos = int(str(err))
 			if err_pos > 0:
-				error_regions.append(sublime.Region(left + err_pos, right))
+				error_regions.append(sublime.Region(right, left + err_pos))
 			else:
-				error_regions.append(sublime.Region(right - 1, right))
+				error_regions.append(sublime.Region(right, right - 1))
 
 	
 	if error_regions:
