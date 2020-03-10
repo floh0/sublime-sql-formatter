@@ -5,20 +5,6 @@ from .ply import yacc
 from .ply import lex
 import re
 
-#              _   _                 
-#   ___  _ __ | |_(_) ___  _ __  ___ 
-#  / _ \| '_ \| __| |/ _ \| '_ \/ __|
-# | (_) | |_) | |_| | (_) | | | \__ \
-#  \___/| .__/ \__|_|\___/|_| |_|___/
-#       |_|                          
-
-options = {
-    "tab": "\t",
-    "newline": "\n",
-    "newline_sep": "\n",
-    "drop_comments": False    
-}
-
 #  _           _                      
 # | |_   ___  | | __  ___  _ __   ___ 
 # | __| / _ \ | |/ / / _ \| '_ \ / __|
@@ -98,7 +84,7 @@ tokens = [
 t_COMMA = r','
 t_COMPARISON = r'!?[=<>]+'
 t_NOT = r'[!~]'
-t_SYMBOL = r'[\*\%\&\+\-\/\^\|]'
+t_SYMBOL = r'[\*\%\&\+\-\/\^\|]+'
 t_SEMICOLON = r';'
 t_POINT = r'\.'
 t_LEFT_PAR = r'\('
@@ -193,6 +179,10 @@ def p_query_with_comment(p):
 def p_subquerry(p):
     'subquerry : expr_definition_list'
     p[0] = p[1]
+
+def p_subquerry_by_block(p):
+    'subquerry : subquerry by_block'
+    p[0] = "%s%s%s" % (p[1], options["newline_sep"], p[2])
 
 #             _              _   
 #  ___   ___ | |  ___   ___ | |_ 
@@ -720,7 +710,8 @@ def p_comment_alone(p):
 
 def p_error(p):
     raise SyntaxError(p.lexpos if p else -1)
-    
+
+options = {}
 lex.lex()
 yacc.yacc()
 
