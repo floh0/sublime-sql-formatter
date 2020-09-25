@@ -445,6 +445,10 @@ def p_expr_definition_list_infix(p):
     '''
     p[0] = "%s %s %s" % (p[1], p[2], p[3])
 
+def p_expr_definition_list_double_infix(p):
+    'expr_definition_list : expr_definition not in expr_definition_list'
+    p[0] = "%s %s %s %s" % (p[1], p[2], p[3], p[4])
+
 def p_expr_definition_list_between(p):
     'expr_definition_list : between expr_definition_list'
     p[2] = p[2].replace('\n',' ')
