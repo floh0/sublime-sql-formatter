@@ -397,7 +397,7 @@ def p_over_clause_list_alone(p):
 
 def p_over_clause(p):
     'over_clause : by_block'
-    p[0] = p[1].replace('\t',' ').replace('\n','')
+    p[0] = p[1]
 
                      
 
